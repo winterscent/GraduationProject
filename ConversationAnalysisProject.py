@@ -43,3 +43,6 @@ for i in range(len(models)):
         
     s.append([d, i])
 print("== Best %i with dist=%.6f : %s"%(best_i, best_dist, models[best_i]))
+
+
+
