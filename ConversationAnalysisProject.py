@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
 from konlpy.tag import Okt
 from sklearn.metrics.pairwise import cosine_similarity
@@ -7,10 +8,10 @@ import numpy as np
 
 # 대화 내용 모델 그룹
 conversations = {
-    "썸": ["좋아", "좋아해", "웅", "보고 싶어"],
-    "연애": ["좋아", "좋아해", "사랑", "사랑해", "웅", "보고 싶어"],
+    "썸": ["이모티콘", "좋아", "좋아해", "웅", "보고 싶어"],
+    "연애": ["이모티콘", "좋아", "좋아해", "사랑", "사랑해", "웅", "보고 싶어"],
     "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다", "네"],
-    "친구": ["야", "아니", "너", "ㅇㅇ", "ㅇㅋ", "ㄴㄴ", "ㅇㅈ", "ㄷㄷ", "개", ""]
+    "친구": ["야", "아니", "너", "ㅇㅇ", "ㅇㅋ", "ㄴㄴ", "ㅇㅈ", "ㄷㄷ", "개", "꺼져"]
 }
 
 # 대화 내용 모델 그룹을 하나의 문서로 합침
@@ -64,41 +65,58 @@ def classify_relationship(target_input):
     return (cosine_similarities, euclidean_distances, final_scores, closest_relation_final)
 
 
-# CSV 파일에서 특정 범위의 대화 내용을 읽어오는 함수
-def read_csv_file(filename, start_row, end_row, column_index):
+def read_csv_file_by_date(filename, start_date, end_date, column_index):
     conversation = ""
+    date_format = "%Y-%m-%d %H:%M:%S"  # CSV 파일의 날짜 형식 정의
     with open(filename, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
-        next(reader)  # 헤더 스킵
-        for i, row in enumerate(reader):
-            if i < start_row:
-                continue
-            if i > end_row:
-                break
-            conversation += row[column_index] + " "  # 지정된 열의 대화를 하나의 문자열로 합침
+        header = next(reader)  # 헤더 스킵
+
+        for row in reader:
+            row_date = datetime.strptime(row[0], date_format)
+            if start_date <= row_date <= end_date:
+                conversation += row[column_index] + " "
     return conversation
 
 
 # 사용자로부터 입력 받기
 filename = "conversation_data3.csv"
-start_row = int(input("시작 행을 입력하세요: "))
-end_row = int(input("끝 행을 입력하세요: "))
-column_index = 2
 
-conversations = read_csv_file(filename, start_row, end_row, column_index)
+# 1열의 날짜를 읽어 사용자에게 보여주기
+dates = []
+date_format = "%Y-%m-%d %H:%M:%S"  # CSV 파일의 날짜 형식 정의
+with open(filename, 'r', encoding='utf-8') as file:
+    reader = csv.reader(file)
+    next(reader)  # 헤더 스킵
+    for row in reader:
+        dates.append(row[0])
+
+print("파일에 포함된 날짜들:")
+print(", ".join(dates[:1]), "...", ", ".join(dates[-1:]))  # 처음 5개와 마지막 5개의 날짜를 출력
+
+start_date_str = input("시작 날짜를 입력하세요 (예: 2023-01-01): ")
+end_date_str = input("끝 날짜를 입력하세요 (예: 2023-12-31): ")
+
+# 입력 받은 날짜 문자열을 datetime 객체로 변환
+start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+column_index = 2  # 분석할 열의 인덱스 (대화 내용이 있는 열)
+
+# 선택한 날짜 범위 내의 대화 내용을 읽어오기
+conversations = read_csv_file_by_date(filename, start_date, end_date, column_index)
 
 # 대화 내용과 관계 유형 판단
 cosine_similarities, euclidean_distances, final_scores, closest_relation_final = classify_relationship(conversations)
 
-print("코사인 유사도 기반 점수:")
+print("코사인 유사도 기반 점수(1에 가까울수록 좋음):")
 for relation, score in cosine_similarities.items():
     print("{}: {:.4f}".format(relation, score))
 
-print("\n유클리드 거리 기반 점수:")
+print("\n유클리드 거리 기반 점수(0에 가까울수록 좋음):")
 for relation, score in euclidean_distances.items():
     print("{}: {:.4f}".format(relation, score))
 
-print("\n최종 점수:")
+print("\n최종 점수(1에 가까울수록 좋음):")
 for relation, score in final_scores.items():
     print("{}: {:.4f}".format(relation, score))
 
