@@ -5,6 +5,7 @@ from konlpy.tag import Okt
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import euclidean
 import numpy as np
+import os
 
 # 대화 내용 모델 그룹
 conversations = {
@@ -62,7 +63,7 @@ def classify_relationship(target_input):
 
     closest_relation_final = max(final_scores, key=final_scores.get)
 
-    return (cosine_similarities, euclidean_distances, final_scores, closest_relation_final)
+    return cosine_similarities, euclidean_distances, final_scores, closest_relation_final
 
 
 def read_csv_file_by_date(filename, start_date, end_date, column_index):
@@ -73,14 +74,34 @@ def read_csv_file_by_date(filename, start_date, end_date, column_index):
         header = next(reader)  # 헤더 스킵
 
         for row in reader:
-            row_date = datetime.strptime(row[0], date_format)
+            try:
+                row_date = datetime.strptime(row[0], date_format)
+            except ValueError:
+                print("잘못된 날짜 형식이 포함된 행을 건너뜁니다.")
+                continue
             if start_date <= row_date <= end_date:
                 conversation += row[column_index] + " "
     return conversation
 
 
-# 사용자로부터 입력 받기
-filename = "conversation_data3.csv"
+def validate_date(date_str):
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def get_valid_file_path():
+    while True:
+        filename = input("CSV 파일 경로를 입력하세요 (예: filename.csv): ")
+        if os.path.exists(filename) and filename.endswith('.csv'):
+            return filename
+        else:
+            print("파일이 없거나 잘못된 형식입니다. 다시 입력해주세요.")
+
+
+# 파일 경로 입력받기
+filename = get_valid_file_path()
 
 # 1열의 날짜를 읽어 사용자에게 보여주기
 dates = []
@@ -91,15 +112,24 @@ with open(filename, 'r', encoding='utf-8') as file:
     for row in reader:
         dates.append(row[0])
 
-print("파일에 포함된 날짜들:")
-print(", ".join(dates[:1]), "...", ", ".join(dates[-1:]))  # 처음 5개와 마지막 5개의 날짜를 출력
+print("파일에 포함된 날짜:", ", ".join(dates[:1]), "~", ", ".join(dates[-1:]))  # 처음 1개와 마지막 1개의 날짜를 출력
 
-start_date_str = input("시작 날짜를 입력하세요 (예: 2023-01-01): ")
-end_date_str = input("끝 날짜를 입력하세요 (예: 2023-12-31): ")
+# 시작 날짜 입력 받기
+start_date_str = input("시작 날짜를 입력하세요 (예: 2024-01-01): ")
+start_date = validate_date(start_date_str)
+while start_date is None:
+    print("정확한 날짜 형식으로 기입해주세요.")
+    start_date_str = input("시작 날짜를 입력하세요 (예: 2024-01-01): ")
+    start_date = validate_date(start_date_str)
 
-# 입력 받은 날짜 문자열을 datetime 객체로 변환
-start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+# 끝 날짜 입력 받기
+end_date_str = input("끝 날짜를 입력하세요 (예: 2024-12-31): ")
+end_date = validate_date(end_date_str)
+while end_date is None:
+    print("정확한 날짜 형식으로 기입해주세요.")
+    end_date_str = input("끝 날짜를 입력하세요 (예: 2024-12-31): ")
+    end_date = validate_date(end_date_str)
+
 column_index = 2  # 분석할 열의 인덱스 (대화 내용이 있는 열)
 
 # 선택한 날짜 범위 내의 대화 내용을 읽어오기
