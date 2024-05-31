@@ -14,9 +14,6 @@ vectorizer = joblib.load('tfidf_vectorizer.pkl')
 label_dict = joblib.load('label_dict.pkl')
 inverse_label_dict = {v: k for k, v in label_dict.items()}
 
-# 형태소 분석기 초기화(Okt 사용)
-translate = Okt()
-
 # 대화 내용 모델 그룹
 conversations = {
     "썸": ["이모티콘", "좋아", "좋아해", "웅", "보고 싶어"],
@@ -27,6 +24,9 @@ conversations = {
 
 # 대화 내용 모델 그룹을 하나의 문서로 합침
 combined_conversations = {relation: ' '.join(conversation) for relation, conversation in conversations.items()}
+
+# 형태소 분석기 초기화(Okt 사용)
+translate = Okt()
 
 # 대화 내용 모델 그룹을 하나의 문서로 합친 것도 형태소 분석
 combined_tokens = {relation: translate.morphs(text) for relation, text in combined_conversations.items()}

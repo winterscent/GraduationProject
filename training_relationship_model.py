@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 import joblib
+import numpy as np
 
 # CSV 파일에서 데이터 로드
 data = pd.read_csv('labeled_conversations.csv')  # 라벨링된 대화 내용 CSV 파일
@@ -24,12 +25,12 @@ def preprocess_text(text):
 texts = [preprocess_text(text) for text in texts]
 
 # TF-IDF 벡터화
-vectorizer = TfidfVectorizer(max_features=5000)
+vectorizer = TfidfVectorizer(min_df=1, max_features=5000)
 X = vectorizer.fit_transform(texts).toarray()
 
 # 라벨 인코딩
 label_dict = {'썸': 0, '연애': 1, '친구': 2, '비즈니스': 3}
-y = [label_dict[label] for label in labels]
+y = np.array([label_dict[label] for label in labels])
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -40,7 +41,7 @@ model.add(Dense(512, input_shape=(X_train.shape[1],), activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(256, activation='relu'))
 model.add(Dropout(0.5))
-model.add(Dense(3, activation='softmax'))
+model.add(Dense(4, activation='softmax'))  # 클래스 수에 맞게 출력 뉴런 수를 4로 설정
 
 # 모델 컴파일
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
