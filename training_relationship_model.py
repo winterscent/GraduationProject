@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 
 # CSV 파일에서 데이터 로드
-data = pd.read_csv('labeled_conversations.csv')  # 라벨링된 대화 내용 CSV 파일
+data = pd.read_csv('labeled_data_for_modeltraining.csv')  # 라벨링된 대화 내용 CSV 파일
 texts = data['text'].tolist()
 labels = data['label'].tolist()
 
