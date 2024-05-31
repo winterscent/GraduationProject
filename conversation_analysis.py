@@ -1,7 +1,6 @@
 import csv
 from datetime import datetime
 from konlpy.tag import Okt
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import euclidean
 import numpy as np
@@ -15,7 +14,7 @@ vectorizer = joblib.load('tfidf_vectorizer.pkl')
 label_dict = joblib.load('label_dict.pkl')
 inverse_label_dict = {v: k for k, v in label_dict.items()}
 
-# 형태소 분석기 초기화
+# 형태소 분석기 초기화(Okt 사용)
 translate = Okt()
 
 # 대화 내용 모델 그룹
@@ -29,15 +28,11 @@ conversations = {
 # 대화 내용 모델 그룹을 하나의 문서로 합침
 combined_conversations = {relation: ' '.join(conversation) for relation, conversation in conversations.items()}
 
-# 형태소 분석기 초기화(Okt 사용)
-translate = Okt()
-
 # 대화 내용 모델 그룹을 하나의 문서로 합친 것도 형태소 분석
 combined_tokens = {relation: translate.morphs(text) for relation, text in combined_conversations.items()}
 combined_for_vectorize = {relation: ' '.join(tokens) for relation, tokens in combined_tokens.items()}
 
 # TF-IDF 벡터 생성
-vectorizer = TfidfVectorizer(min_df=1)
 X = vectorizer.fit_transform(list(combined_for_vectorize.values()))
 
 

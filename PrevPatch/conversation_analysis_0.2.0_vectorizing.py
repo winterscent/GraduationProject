@@ -1,3 +1,4 @@
+"""
 import csv
 from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -151,3 +152,4 @@ for relation, score in final_scores.items():
     print("{}: {:.4f}".format(relation, score))
 
 print("\n입력한 대화 내용은 '{}' 관계에 해당합니다.".format(closest_relation_final))
+"""
