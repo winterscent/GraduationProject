@@ -1,19 +1,25 @@
-"""
 import csv
 from datetime import datetime
-from sklearn.feature_extraction.text import TfidfVectorizer
 from konlpy.tag import Okt
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import euclidean
 import numpy as np
 import os
+import joblib
+from tensorflow.keras.models import load_model
+
+# 딥러닝 모델과 벡터화, 라벨 사전 로드
+model = load_model('relationship_model.h5')
+vectorizer = joblib.load('tfidf_vectorizer.pkl')
+label_dict = joblib.load('label_dict.pkl')
+inverse_label_dict = {v: k for k, v in label_dict.items()}
 
 # 대화 내용 모델 그룹
 conversations = {
     "썸": ["이모티콘", "좋아", "좋아해", "웅", "보고 싶어"],
     "연애": ["이모티콘", "좋아", "좋아해", "사랑", "사랑해", "웅", "보고 싶어"],
     "친구": ["야", "아니", "너", "ㅇㅇ", "ㅇㅋ", "ㄴㄴ", "ㅇㅈ", "ㄷㄷ", "개", "꺼져"],
-    "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다", "네"]
+    "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다"]
 }
 
 # 대화 내용 모델 그룹을 하나의 문서로 합침
@@ -27,7 +33,6 @@ combined_tokens = {relation: translate.morphs(text) for relation, text in combin
 combined_for_vectorize = {relation: ' '.join(tokens) for relation, tokens in combined_tokens.items()}
 
 # TF-IDF 벡터 생성
-vectorizer = TfidfVectorizer(min_df=1)
 X = vectorizer.fit_transform(list(combined_for_vectorize.values()))
 
 
@@ -37,6 +42,10 @@ def classify_relationship(target_input):
     target_tokens = translate.morphs(target_input)
     target_for_vectorize = ' '.join(target_tokens)
     t_vec = vectorizer.transform([target_for_vectorize])  # 대상 문장의 TF-IDF 벡터 생성
+
+    # 딥러닝 모델 예측
+    prediction = model.predict(t_vec.toarray())
+    predicted_label = inverse_label_dict[np.argmax(prediction)]
 
     # 각 관계 유형과 대상 문장 간의 코사인 유사도 계산
     cosine_similarities = {}
@@ -62,9 +71,18 @@ def classify_relationship(target_input):
         final_score = (cosine_score + adjusted_euclidean_score) / 2
         final_scores[relation] = final_score
 
-    closest_relation_final = max(final_scores, key=final_scores.get)
+    # 딥러닝 모델 예측 확률을 각 관계에 맞춰 변환
+    predicted_scores = {inverse_label_dict[i]: score for i, score in enumerate(prediction[0])}
 
-    return cosine_similarities, euclidean_distances, final_scores, closest_relation_final
+    # 최종 점수 비율 25%, 딥러닝 모델 예측 점수 비율 75%로 합산
+    combined_scores = {}
+    for relation in final_scores.keys():
+        combined_scores[relation] = final_scores[relation] * 0.25 + predicted_scores[relation] * 0.75
+
+    closest_relation_combined = max(combined_scores, key=combined_scores.get)
+
+    return (cosine_similarities, euclidean_distances, final_scores,
+            closest_relation_combined, predicted_label, predicted_scores, combined_scores)
 
 
 def read_csv_file_by_date(filename, start_date, end_date, column_index):
@@ -137,7 +155,8 @@ column_index = 2  # 분석할 열의 인덱스 (대화 내용이 있는 열)
 conversations = read_csv_file_by_date(filename, start_date, end_date, column_index)
 
 # 대화 내용과 관계 유형 판단
-cosine_similarities, euclidean_distances, final_scores, closest_relation_final = classify_relationship(conversations)
+(cosine_similarities, euclidean_distances, final_scores, closest_relation_combined,
+ predicted_label, predicted_scores, combined_scores) = classify_relationship(conversations)
 
 print("코사인 유사도 기반 점수(1에 가까울수록 좋음):")
 for relation, score in cosine_similarities.items():
@@ -151,5 +170,13 @@ print("\n최종 점수(1에 가까울수록 좋음):")
 for relation, score in final_scores.items():
     print("{}: {:.4f}".format(relation, score))
 
-print("\n입력한 대화 내용은 '{}' 관계에 해당합니다.".format(closest_relation_final))
-"""
+print("\n딥러닝 모델에 의해 예측된 각 관계의 확률:")
+for relation, score in predicted_scores.items():
+    print("{}: {:.4f}".format(relation, score))
+
+print("\n최종 합산 점수(1에 가까울수록 좋음):")
+for relation, score in combined_scores.items():
+    print("{}: {:.4f}".format(relation, score))
+
+print("\n입력한 대화 내용은 최종 합산 점수에 따라 '{}' 관계에 해당합니다.".format(closest_relation_combined))
+print("\n딥러닝 모델에 의해 예측된 관계는 '{}' 입니다.".format(predicted_label))

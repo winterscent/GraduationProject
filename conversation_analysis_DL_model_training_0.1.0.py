@@ -47,7 +47,7 @@ model.add(Dense(4, activation='softmax'))  # 클래스 수에 맞게 출력 뉴�
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # 모델 학습
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.1)
+model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.1)
 
 # 모델 평가
 loss, accuracy = model.evaluate(X_test, y_test)
