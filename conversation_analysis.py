@@ -19,7 +19,7 @@ conversations = {
     "썸": ["이모티콘", "좋아", "좋아해", "웅", "보고 싶어"],
     "연애": ["이모티콘", "좋아", "좋아해", "사랑", "사랑해", "웅", "보고 싶어"],
     "친구": ["야", "아니", "너", "ㅇㅇ", "ㅇㅋ", "ㄴㄴ", "ㅇㅈ", "ㄷㄷ", "개", "꺼져"],
-    "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다", "네"]
+    "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다"]
 }
 
 # 대화 내용 모델 그룹을 하나의 문서로 합침
@@ -81,8 +81,8 @@ def classify_relationship(target_input):
 
     closest_relation_combined = max(combined_scores, key=combined_scores.get)
 
-    return (cosine_similarities, euclidean_distances, final_scores, closest_relation_combined,
-            predicted_label, predicted_scores, combined_scores)
+    return (cosine_similarities, euclidean_distances, final_scores,
+            closest_relation_combined, predicted_label, predicted_scores, combined_scores)
 
 
 def read_csv_file_by_date(filename, start_date, end_date, column_index):
