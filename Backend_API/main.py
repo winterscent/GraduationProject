@@ -1,8 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
-from fastapi.responses import JSONResponse
-from io import BytesIO
 import os
-import shutil
 import csv
 from convert_txt_to_csv import convert_txt_to_csv
 from name_masking import mask_names_in_csv
