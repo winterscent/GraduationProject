@@ -1,10 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi.responses import JSONResponse
+from io import BytesIO
 import os
-import csv
 import shutil
+import csv
 from convert_txt_to_csv import convert_txt_to_csv
 from name_masking import mask_names_in_csv
 from conversation_analysis import analyze_conversation
+from datetime import datetime
 
 app = FastAPI()
 
@@ -17,13 +20,25 @@ async def read_root():
 
 # 업로드된 파일을 처리하고 분석하는 엔드포인트
 @app.post("/uploadfile/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+        file: UploadFile = File(...),
+        start_date: str = Form(...),
+        end_date: str = Form(...)
+):
     try:
-        # 파일을 서버에 저장
+        # 날짜 유효성 검사
+        start_date_obj = datetime.strptime(start_date, "%Y%m%d")
+        end_date_obj = datetime.strptime(end_date, "%Y%m%d")
+        if start_date_obj > end_date_obj:
+            raise HTTPException(status_code=400, detail="Start date must be earlier than end date.")
+
+        # 파일 내용을 메모리에 읽기
+        file_contents = await file.read()  # 비동기로 파일 내용 읽기
         file_location = f"files/{file.filename}"
         os.makedirs(os.path.dirname(file_location), exist_ok=True)
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
+
+        with open(file_location, "wb") as file_object:
+            file_object.write(file_contents)  # 파일 내용을 저장
 
         # 파일이 .txt라면 CSV로 변환
         if file.filename.endswith('.txt'):
@@ -39,11 +54,17 @@ async def upload_file(file: UploadFile = File(...)):
         # 마스킹된 CSV 파일에서 대화 내용을 분석 (대화 내용이 3번째 열에 있다고 가정)
         with open(masked_csv_file, 'r', encoding='utf-8') as f:
             csv_reader = csv.reader(f)
-            next(csv_reader)  # 헤더 스킵
-            conversation_text = " ".join([row[2] for row in csv_reader])  # 3번째 열에서 대화 내용 추출
+            header = next(csv_reader)  # 헤더 읽기
+            conversation_text = []
+
+            # 날짜 범위에 맞는 대화 내용 필터링
+            for row in csv_reader:
+                row_date = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")  # Assuming the date is in the first column
+                if start_date_obj <= row_date <= end_date_obj:
+                    conversation_text.append(row[2])  # 3번째 열에서 대화 내용 추출
 
         # 대화 내용을 분석
-        analysis_result = analyze_conversation(conversation_text)
+        analysis_result = analyze_conversation(" ".join(conversation_text))
 
         return analysis_result
     except Exception as e:
