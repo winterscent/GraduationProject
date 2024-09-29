@@ -29,15 +29,15 @@ async def upload_file(
         if start_date_obj > end_date_obj:
             raise HTTPException(status_code=400, detail="Start date must be earlier than end date.")
 
-        # 파일 내용을 메모리에 읽기
+        # 파일 내용 메모리에 읽기
         file_contents = await file.read()  # 비동기로 파일 내용 읽기
         file_location = f"files/{file.filename}"
         os.makedirs(os.path.dirname(file_location), exist_ok=True)
 
         with open(file_location, "wb") as file_object:
-            file_object.write(file_contents)  # 파일 내용을 저장
+            file_object.write(file_contents)  # 파일 내용 저장
 
-        # 파일이 .txt라면 CSV로 변환
+        # 파일이 .txt라면 .csv로 변환
         if file.filename.endswith('.txt'):
             csv_file = convert_txt_to_csv(file_location)
         elif file.filename.endswith('.csv'):
@@ -45,10 +45,10 @@ async def upload_file(
         else:
             raise HTTPException(status_code=400, detail="Unsupported file type. Only .txt and .csv are supported.")
 
-        # CSV 파일에서 이름을 마스킹
+        # CSV 파일에서 이름 마스킹
         masked_csv_file = mask_names_in_csv(csv_file)
 
-        # 마스킹된 CSV 파일에서 대화 내용을 분석 (대화 내용이 3번째 열에 있다고 가정)
+        # 마스킹된 CSV 파일에서 대화 내용 분석
         with open(masked_csv_file, 'r', encoding='utf-8') as f:
             csv_reader = csv.reader(f)
             header = next(csv_reader)  # 헤더 읽기
@@ -56,11 +56,11 @@ async def upload_file(
 
             # 날짜 범위에 맞는 대화 내용 필터링
             for row in csv_reader:
-                row_date = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")  # Assuming the date is in the first column
+                row_date = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")  # 1번째 열에서 날짜 확인
                 if start_date_obj <= row_date <= end_date_obj:
                     conversation_text.append(row[2])  # 3번째 열에서 대화 내용 추출
 
-        # 대화 내용을 분석
+        # 대화 내용 분석
         analysis_result = analyze_conversation(" ".join(conversation_text))
 
         return analysis_result
