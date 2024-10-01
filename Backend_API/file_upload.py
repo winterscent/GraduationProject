@@ -19,10 +19,6 @@ async def upload_and_analyze_file(
     end_date: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # 동의 여부 확인
-    if not consent:
-        return {"message": "Consent not given. Analysis aborted."}
-
     try:
         # 날짜 유효성 검사
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
@@ -65,7 +61,10 @@ async def upload_and_analyze_file(
         # 결과 반환
         return {
             "analysis_id": new_analysis.analysis_id,
-            "result": analysis_result.get("closest_relation"),
+            "result": {
+                "closest_relation": analysis_result.get("closest_relation"),
+                "final_scores": analysis_result.get("final_scores"),
+            }
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
