@@ -48,6 +48,7 @@ async def upload_and_analyze_file(
 
         # S3에 파일 업로드 및 DB 저장
         upload_to_s3(masked_csv_file, "cafs-aws-bucket")
+
         new_analysis = AnalysisResult(
             file_url=f"https://cafs-aws-bucket.s3.ap-northeast-2.amazonaws.com/files/{file.filename}_masked.csv",
             start_date=start_date_obj,
@@ -60,7 +61,7 @@ async def upload_and_analyze_file(
 
         # 결과 반환
         return {
-            "analysis_id": new_analysis.analysis_id,
+            "analysis_id": new_analysis.analysis_id if consent else None,
             "result": {
                 "closest_relation": analysis_result.get("closest_relation"),
                 "final_scores": analysis_result.get("final_scores"),
