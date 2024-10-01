@@ -2,26 +2,30 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime
 import os
-import csv
 from s3_utils import upload_to_s3
 from database import get_db, AnalysisResult
+from conversation_analysis import analyze_conversation
 from convert_txt_to_csv import convert_txt_to_csv
 from name_masking import mask_names_in_csv
-from conversation_analysis import analyze_conversation
 
 upload_router = APIRouter()
 
 @upload_router.post("/")
-async def upload_file(
+async def upload_and_analyze_file(
+    consent: bool = Form(...),
     file: UploadFile = File(...),
     start_date: str = Form(...),
     end_date: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    # 동의 여부 확인
+    if not consent:
+        return {"message": "Consent not given. Analysis aborted."}
+
     try:
         # 날짜 유효성 검사
-        start_date_obj = datetime.strptime(start_date, "%Y%m%d")
-        end_date_obj = datetime.strptime(end_date, "%Y%m%d")
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
         if start_date_obj > end_date_obj:
             raise HTTPException(status_code=400, detail="Start date must be earlier than end date.")
 
@@ -45,22 +49,26 @@ async def upload_file(
         conversation_text = extract_conversation_text(masked_csv_file, start_date_obj, end_date_obj)
         analysis_result = analyze_conversation(conversation_text)
 
-        # 분석 결과 DB 저장
-        result_record = AnalysisResult(
-            start_date=start_date,
-            end_date=end_date,
-            masked_csv_file=masked_csv_file,
-            analysis_result=analysis_result
+        # S3에 파일 업로드 및 DB 저장
+        file_url = upload_to_s3(masked_csv_file)
+        new_analysis = AnalysisResult(
+            file_url=file_url,
+            start_date=start_date_obj,
+            end_date=end_date_obj,
+            result=analysis_result.get("closest_relation")
         )
-        db.add(result_record)
+        db.add(new_analysis)
         db.commit()
+        db.refresh(new_analysis)
 
-        # S3에 파일 업로드
-        upload_to_s3(masked_csv_file)
-
-        return {"message": "Analysis complete.", "result": analysis_result}
+        # 결과 반환
+        return {
+            "analysis_id": new_analysis.analysis_id,
+            "result": analysis_result.get("closest_relation"),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
 
 # CSV 파일에서 대화 내용 추출
 def extract_conversation_text(masked_csv_file, start_date_obj, end_date_obj):

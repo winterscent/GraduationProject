@@ -5,19 +5,21 @@ from database import get_db, AnalysisResult
 
 rating_router = APIRouter()
 
-# 별점 모델
-class RatingModel(BaseModel):
-    rating: float
 
-@rating_router.post("/{analysis_id}")
-async def rate_analysis(analysis_id: int, rating_model: RatingModel, db: Session = Depends(get_db)):
-    # 분석 결과 찾기
-    analysis_record = db.query(AnalysisResult).filter(AnalysisResult.id == analysis_id).first()
+class RatingForm(BaseModel):
+    analysis_id: int
+    score: int
+    comment: str
+
+
+# 별점 및 리뷰 저장
+@rating_router.post("/")
+async def submit_rating(rating_form: RatingForm, db: Session = Depends(get_db)):
+    analysis_record = db.query(AnalysisResult).filter(AnalysisResult.analysis_id == rating_form.analysis_id).first()
     if not analysis_record:
-        raise HTTPException(status_code=404, detail="Analysis result not found.")
+        raise HTTPException(status_code=404, detail="Analysis ID not found.")
 
-    # 별점 저장
-    analysis_record.rating = rating_model.rating
+    analysis_record.score = rating_form.score
+    analysis_record.comment = rating_form.comment
     db.commit()
-
-    return {"message": "Rating submitted.", "rating": rating_model.rating}
+    return {"message": "Rating and comment saved."}
