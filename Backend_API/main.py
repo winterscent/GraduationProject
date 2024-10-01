@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
 from consent import consent_router
 from file_upload import upload_router
@@ -8,6 +9,20 @@ from rating import rating_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# CORS 설정
+origins = [
+    "http://localhost:8080",
+    "http://localhost:8081",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 라우터 등록
 app.include_router(consent_router, prefix="/consent")

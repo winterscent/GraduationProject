@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime
 import os
+import csv
 from s3_utils import upload_to_s3
 from database import get_db, AnalysisResult
 from conversation_analysis import analyze_conversation
@@ -50,9 +51,9 @@ async def upload_and_analyze_file(
         analysis_result = analyze_conversation(conversation_text)
 
         # S3에 파일 업로드 및 DB 저장
-        file_url = upload_to_s3(masked_csv_file)
+        upload_to_s3(masked_csv_file, "cafs-aws-bucket")
         new_analysis = AnalysisResult(
-            file_url=file_url,
+            file_url=f"https://cafs-aws-bucket.s3.ap-northeast-2.amazonaws.com/files/{file.filename}_masked.csv",
             start_date=start_date_obj,
             end_date=end_date_obj,
             result=analysis_result.get("closest_relation")

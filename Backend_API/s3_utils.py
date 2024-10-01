@@ -1,15 +1,14 @@
 import boto3
-import os
 
-# S3 설정
-BUCKET_NAME = "your-bucket-name"
-s3 = boto3.client('s3')
+def upload_to_s3(file_name, bucket, object_name=None):
+    # S3 리소스 생성
+    s3 = boto3.client('s3')
 
-# S3 파일 업로드 함수
-def upload_to_s3(file_path):
+    # 업로드
     try:
-        file_name = os.path.basename(file_path)
-        s3.upload_file(file_path, BUCKET_NAME, file_name)
-        return f"https://{BUCKET_NAME}.s3.amazonaws.com/{file_name}"
+        if object_name is None:
+            object_name = file_name
+        s3.upload_file(file_name, bucket, object_name)
+        print(f"File {file_name} uploaded successfully to {bucket}/{object_name}.")
     except Exception as e:
-        raise RuntimeError(f"Error uploading to S3: {str(e)}")
+        print(f"Failed to upload {file_name}. Error: {e}")
