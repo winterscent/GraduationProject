@@ -11,6 +11,7 @@ android_pattern = re.compile(r'(\d{4})년 (\d{1,2})월 (\d{1,2})일 (오전|오�
 # Windows 형식
 windows_pattern = re.compile(r'\[(.*)\] \[(오전|오후) (\d{1,2}):(\d{2})\] (.*)')
 
+
 # txt 파일을 csv로 변환하는 함수
 def convert_txt_to_csv(txt_file):
     csv_file = os.path.splitext(txt_file)[0] + '.csv'
@@ -22,7 +23,7 @@ def convert_txt_to_csv(txt_file):
         for line in infile:
             line = line.strip()
 
-            # iOS와 Mac 형식 처리
+            # iOS 형식 처리
             match = ios_pattern.match(line)
             if match:
                 year = match.group(1)
@@ -88,7 +89,7 @@ def convert_txt_to_csv(txt_file):
                 if 'full_datetime' in locals():
                     csv_writer.writerow([full_datetime, sender, message])
 
-            # 날짜 정보가 있는 줄(예: --- 2023년 8월 1일 화요일 ---) 처리
+            # 날짜 정보가 있는 줄 (ex: --- 2023년 8월 1일 화요일 ---) 처리
             date_match = re.match(r'--------------- (\d{4})년 (\d{1,2})월 (\d{1,2})일.* ---------------', line)
             if date_match:
                 year = date_match.group(1)
