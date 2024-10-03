@@ -47,10 +47,10 @@ async def upload_and_analyze_file(
         analysis_result = analyze_conversation(conversation_text)
 
         # S3에 파일 업로드 및 DB 저장
-        upload_to_s3(masked_csv_file, "cafs-aws-bucket")
+        upload_to_s3(masked_csv_file, "sometimes-conversation-bucket")
 
         new_analysis = AnalysisResult(
-            file_url=f"https://cafs-aws-bucket.s3.ap-northeast-2.amazonaws.com/files/{file.filename}_masked.csv",
+            file_url=f"https://sometimes-conversation-bucket.s3.ap-northeast-2.amazonaws.com/files/{file.filename}_masked.csv",
             start_date=start_date_obj,
             end_date=end_date_obj,
             result=analysis_result.get("closest_relation")

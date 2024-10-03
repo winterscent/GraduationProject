@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # DB 설정 (AWS EC2 환경에서 DB URL을 입력)
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:hellomac@mariadb.cr0662wm0o8o.ap-northeast-2.rds.amazonaws.com:3306/analysis"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://admin:Passwrd123!@proxy-1727851828601-sometimes.proxy-c7eu2ke4cbhm.ap-northeast-2.rds.amazonaws.com:3306/sometimes"
 
 # DB 엔진 및 세션 초기화
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
