@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
-from file_upload import upload_router
+from file_analyze import upload_router
 from rating import rating_router
 
 # DB 초기화

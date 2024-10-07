@@ -8,6 +8,7 @@ from database import get_db, AnalysisResult
 from conversation_analysis import analyze_conversation
 from convert_txt_to_csv import convert_txt_to_csv
 from name_masking import mask_names_in_csv
+from chatgpt_api import send_data_to_chatgpt, extract_latest_conversation
 
 upload_router = APIRouter()
 
@@ -46,6 +47,16 @@ async def upload_and_analyze_file(
         conversation_text = extract_conversation_text(masked_csv_file, start_date_obj, end_date_obj)
         analysis_result = analyze_conversation(conversation_text)
 
+        # 최근 대화 50개 줄 추출
+        latest_conversation = extract_latest_conversation(conversation_text)
+
+        # ChatGPT API로 데이터 전송 및 응답 수신
+        chatgpt_response = await send_data_to_chatgpt(
+            closest_relation=analysis_result.get("closest_relation"),
+            final_scores=analysis_result.get("final_scores"),
+            conversation_text=latest_conversation  # 가장 최신 50개 대화 줄을 사용
+        )
+
         # S3에 파일 업로드 및 DB 저장
         upload_to_s3(masked_csv_file, "sometimes-conversation-bucket")
 
@@ -53,7 +64,8 @@ async def upload_and_analyze_file(
             file_url=f"https://sometimes-conversation-bucket.s3.ap-northeast-2.amazonaws.com/files/{file.filename}_masked.csv",
             start_date=start_date_obj,
             end_date=end_date_obj,
-            result=analysis_result.get("closest_relation")
+            result=analysis_result.get("closest_relation"),
+            chatgpt_summary=chatgpt_response
         )
         db.add(new_analysis)
         db.commit()
@@ -65,6 +77,7 @@ async def upload_and_analyze_file(
             "result": {
                 "closest_relation": analysis_result.get("closest_relation"),
                 "final_scores": analysis_result.get("final_scores"),
+                "chatgpt_summary": chatgpt_response,
             }
         }
     except Exception as e:
