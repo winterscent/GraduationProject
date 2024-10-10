@@ -11,14 +11,9 @@ app = FastAPI()
 
 # CORS 설정
 origins = [
-    "http://application-lb-1275420282.ap-northeast-2.elb.amazonaws.com",
-    "https://4xsbtut5d7.execute-api.ap-northeast-2.amazonaws.com",
-    "https://www.sometime.site",
-<<<<<<< HEAD
-=======
-    "http://103.218.159.57",
+    "http://www.sometime.site",
+    "http://api.sometime.site",
     "http://localhost:8080",
->>>>>>> eb836e1 (modified Project)
 ]
 
 app.add_middleware(
@@ -30,7 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(upload_router, prefix="/api/upload")
-app.include_router(rating_router, prefix="/api/rate")
+app.include_router(rating_router, prefix="/api/rate", tags=["rating"])
 
 @app.get("/")
 async def read_root():

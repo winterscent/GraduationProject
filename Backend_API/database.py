@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 
-# DB 설정 (AWS EC2 환경에서 DB URL을 입력)
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://dongdong:Passwrd123!@f8b2b777-27bf-45be-9b9e-639caf9370d1.internal.kr1.mariadb.rds.nhncloudservice.com:3306/sometimes"
+# DB 설정
+SQLALCHEMY_DATABASE_URL = os.getenv("mysql_db_sometime_KEY")
 
 # DB 엔진 및 세션 초기화
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
