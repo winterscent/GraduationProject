@@ -1,10 +1,12 @@
 from sqlalchemy import create_engine, Column, Integer, String, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 import os
 
 # DB 설정
-SQLALCHEMY_DATABASE_URL = os.getenv("mysql_db_sometime_KEY")
+load_dotenv()
+SQLALCHEMY_DATABASE_URL = os.getenv("mysql_db_url")
 
 # DB 엔진 및 세션 초기화
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

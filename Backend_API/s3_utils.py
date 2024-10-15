@@ -1,9 +1,11 @@
+from dotenv import load_dotenv
 import boto3
 import uuid
 import os
 
 def upload_to_s3(file_name, bucket, object_name=None):
     # S3 리소스 생성
+    load_dotenv()
     obs_client = boto3.client(
         's3',
         aws_access_key_id=os.getenv("aws_access_key_id"),
