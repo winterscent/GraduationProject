@@ -1,4 +1,3 @@
-"""
 from sklearn.feature_extraction.text import TfidfVectorizer
 from konlpy.tag import Okt
 import scipy as sp
@@ -58,4 +57,3 @@ target_input = input("대화 내용을 입력하세요: ")
 # 대화 내용과 관계 유형 판단
 relation = classify_relationship(target_input)
 print("입력한 대화 내용은 '{}' 관계에 해당합니다.".format(relation))
-"""
