@@ -12,18 +12,33 @@ conversations = {
     "썸": ["이모티콘", "좋아", "좋아해", "웅", "보고 싶어"],
     "연애": ["이모티콘", "좋아", "좋아해", "사랑", "사랑해", "웅", "보고 싶어"],
     "친구": ["야", "아니", "너", "ㅇㅇ", "ㅇㅋ", "ㄴㄴ", "ㅇㅈ", "ㄷㄷ", "개", "꺼져"],
-    "비즈니스": ["알겠습니다", "확인했습니다", "감사합니다", "그때 뵙겠습니다", "드립니다", "바랍니다", "네"]
+    "비즈니스": [
+        "알겠습니다",
+        "확인했습니다",
+        "감사합니다",
+        "그때 뵙겠습니다",
+        "드립니다",
+        "바랍니다",
+        "네",
+    ],
 }
 
 # 대화 내용 모델 그룹을 하나의 문서로 합침
-combined_conversations = {relation: ' '.join(conversation) for relation, conversation in conversations.items()}
+combined_conversations = {
+    relation: " ".join(conversation) for relation, conversation in conversations.items()
+}
 
 # 형태소 분석기 초기화(Okt 사용)
 translate = Okt()
 
 # 대화 내용 모델 그룹을 하나의 문서로 합친 것도 형태소 분석
-combined_tokens = {relation: translate.morphs(text) for relation, text in combined_conversations.items()}
-combined_for_vectorize = {relation: ' '.join(tokens) for relation, tokens in combined_tokens.items()}
+combined_tokens = {
+    relation: translate.morphs(text)
+    for relation, text in combined_conversations.items()
+}
+combined_for_vectorize = {
+    relation: " ".join(tokens) for relation, tokens in combined_tokens.items()
+}
 
 # TF-IDF 벡터 생성
 vectorizer = TfidfVectorizer(min_df=1)
@@ -34,7 +49,7 @@ X = vectorizer.fit_transform(list(combined_for_vectorize.values()))
 def classify_relationship(target_input):
     # 대상 문장에 대해 형태소 분석, 분석 결과를 공백으로 구분된 문자열로 변환
     target_tokens = translate.morphs(target_input)
-    target_for_vectorize = ' '.join(target_tokens)
+    target_for_vectorize = " ".join(target_tokens)
     t_vec = vectorizer.transform([target_for_vectorize])  # 대상 문장의 TF-IDF 벡터 생성
 
     # 각 관계 유형과 대상 문장 간의 코사인 유사도 계산
@@ -63,13 +78,18 @@ def classify_relationship(target_input):
 
     closest_relation_final = max(final_scores, key=final_scores.get)
 
-    return cosine_similarities, euclidean_distances, final_scores, closest_relation_final
+    return (
+        cosine_similarities,
+        euclidean_distances,
+        final_scores,
+        closest_relation_final,
+    )
 
 
 def read_csv_file_by_date(filename, start_date, end_date, column_index):
     conversation = ""
     date_format = "%Y-%m-%d %H:%M:%S"  # CSV 파일의 날짜 형식 정의
-    with open(filename, 'r', encoding='utf-8') as file:
+    with open(filename, "r", encoding="utf-8") as file:
         reader = csv.reader(file)
         header = next(reader)  # 헤더 스킵
 
@@ -94,7 +114,7 @@ def validate_date(date_str):
 def get_valid_file_path():
     while True:
         filename = input("CSV 파일 경로를 입력하세요 (예: filename.csv): ")
-        if os.path.exists(filename) and filename.endswith('.csv'):
+        if os.path.exists(filename) and filename.endswith(".csv"):
             return filename
         else:
             print("파일이 없거나 잘못된 형식입니다. 다시 입력해주세요.")
@@ -106,13 +126,15 @@ filename = get_valid_file_path()
 # 1열의 날짜를 읽어 사용자에게 보여주기
 dates = []
 date_format = "%Y-%m-%d %H:%M:%S"  # CSV 파일의 날짜 형식 정의
-with open(filename, 'r', encoding='utf-8') as file:
+with open(filename, "r", encoding="utf-8") as file:
     reader = csv.reader(file)
     next(reader)  # 헤더 스킵
     for row in reader:
         dates.append(row[0])
 
-print("파일에 포함된 날짜:", ", ".join(dates[:1]), "~", ", ".join(dates[-1:]))  # 처음 1개와 마지막 1개의 날짜를 출력
+print(
+    "파일에 포함된 날짜:", ", ".join(dates[:1]), "~", ", ".join(dates[-1:])
+)  # 처음 1개와 마지막 1개의 날짜를 출력
 
 # 시작 날짜 입력 받기
 start_date_str = input("시작 날짜를 입력하세요 (예: 2024-01-01): ")
@@ -136,7 +158,9 @@ column_index = 2  # 분석할 열의 인덱스 (대화 내용이 있는 열)
 conversations = read_csv_file_by_date(filename, start_date, end_date, column_index)
 
 # 대화 내용과 관계 유형 판단
-cosine_similarities, euclidean_distances, final_scores, closest_relation_final = classify_relationship(conversations)
+cosine_similarities, euclidean_distances, final_scores, closest_relation_final = (
+    classify_relationship(conversations)
+)
 
 print("코사인 유사도 기반 점수(1에 가까울수록 좋음):")
 for relation, score in cosine_similarities.items():
